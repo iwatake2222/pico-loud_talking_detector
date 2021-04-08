@@ -1,5 +1,6 @@
 # Loud Talking Detector
-This device detects loud talking in an eating spot to help in the fight against COVID ( Corona Virus ) .
+- This system detects loud talking in an eating spot to help in the fight against COVID ( Corona Virus )
+- This system can be implemented in a order call system
 
 ## System overview
 - Training
