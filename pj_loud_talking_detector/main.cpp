@@ -148,7 +148,7 @@ int main(void) {
         for (int32_t i = 0; i < kCategoryCount; i++) {
             current_score_list[i] = y_quantized[i];
             float y = (y_quantized[i] - output->params.zero_point) * output->params.scale;
-            if (y > 0.8 && (i == 2 || i == 3)) {
+            if (y > 0.8) {
                 PRINT("%s: %f\n", kCategoryLabels[i], y);
             }
         }

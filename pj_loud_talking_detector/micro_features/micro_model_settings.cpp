@@ -18,6 +18,9 @@ limitations under the License.
 const char* kCategoryLabels[kCategoryCount] = {
     "silence",
     "unknown",
-    "yes",
-    "no",
+    "sin200",
+    "sin400",
+    "sin600",
+    "sin800",
+    "sin1000",
 };
