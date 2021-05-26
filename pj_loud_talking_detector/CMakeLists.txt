@@ -44,6 +44,7 @@ else()
         hardware_adc
         hardware_dma
         hardware_irq
+        hardware_i2c
         pico_multicore
     )
 

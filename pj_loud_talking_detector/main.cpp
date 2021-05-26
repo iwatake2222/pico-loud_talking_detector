@@ -40,6 +40,7 @@ limitations under the License.
 #include "utility_macro.h"
 #include "audio_provider.h"
 #include "majority_vote.h"
+#include "OledSh1106.h"
 
 /*** MACRO ***/
 #define TAG "main"
@@ -112,6 +113,13 @@ int main(void) {
     //MajorityVote<float> majority_vote;
     MajorityVote<int32_t> majority_vote;
 
+    /* Create Display */
+    OledSh1106 oled;
+    oled.initialize();
+    oled.fillRect(0, 0, 0, OledSh1106::WIDTH, OledSh1106::HEIGHT);
+    oled.setCharPos(8, 4);
+    oled.printText("Hello!!");
+
     while (1) {
         /* Generate feature */
         audio_provider.DebugWriteData(500);
@@ -145,14 +153,25 @@ int main(void) {
         /* Show result */
         int8_t* y_quantized = output->data.int8;
         std::array<int32_t, kCategoryCount> current_score_list;
+        int32_t detected_index = -1;
         for (int32_t i = 0; i < kCategoryCount; i++) {
             current_score_list[i] = y_quantized[i];
             float y = (y_quantized[i] - output->params.zero_point) * output->params.scale;
-            if (y > 0.8) {
-                PRINT("%s: %f\n", kCategoryLabels[i], y);
+            oled.setCharPos(1, i + 1);
+            char buff[OledSh1106::WIDTH / OledSh1106::FONT_WIDTH - 1];
+            snprintf(buff, sizeof(buff), "%s: %.03f\n", kCategoryLabels[i], y);
+            oled.printText(buff);
+            if (y > 0.95) {
+                PRINT("%s", buff);
+                detected_index = i;
             }
         }
-        // PRINT("----\n");
+        oled.setCharPos(5, 6);
+        if (detected_index == 2) {
+            oled.printText(">>> TALKING <<<");
+        } else {
+            oled.printText("               ");
+        }
 
         /* From some experiments, slices_to_drop is 3 ~ 5. It means that the interval is 60 ~ 100 msec */
         /* So, using average for some results may cause wrong result */

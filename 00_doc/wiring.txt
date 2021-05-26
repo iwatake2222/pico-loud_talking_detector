@@ -1,0 +1,14 @@
+pico              OLED
+---------------------------------------
+3 (GND)            GND
+36 (3V3)           VDD
+6 (GP4=SPI0 i2c0)  SDA
+7 (GP5=SPI0 i2c0)  SCL
+
+
+pico                Microphone
+---------------------------------------
+3 (GND)             GND
+36 (3V3)            VDD
+31 (GP26 = ADC0)    MIC_OUT
+
