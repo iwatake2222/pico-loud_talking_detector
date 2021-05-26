@@ -33,7 +33,7 @@ public:
 private:
     static constexpr int32_t kSamplingRate = 16000;
     static constexpr int32_t kBlockSize = 512;
-    static constexpr int32_t kBufferSize = 10;
+    static constexpr int32_t kBufferSize = 30; // > processig_time / 32 msec 
     static constexpr int32_t kSamplePerMs = kSamplingRate / 1000;           // 16 sample = 1msec
     static constexpr int32_t kDurationPerBlock = kBlockSize / kSamplePerMs; // 32msec
 

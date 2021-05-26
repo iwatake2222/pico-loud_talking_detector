@@ -88,7 +88,7 @@ void TestBuffer::DebugWriteData(int32_t duration_ms) {
             p[i] = s_test_data[s_current_test_data_index];
             s_current_test_data_index++;
             if (s_current_test_data_index == kTestDataNum) return;
-            //s_current_test_data_index %= SIZE_DATA_NUM;
+            //s_current_test_data_index %= kTestDataNum;
         }
     }
 }

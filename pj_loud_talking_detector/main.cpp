@@ -51,9 +51,9 @@ static tflite::MicroErrorReporter micro_error_reporter;
 static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
 /*** FUNCTION ***/
-static tflite::MicroInterpreter* createStaticInterpreter(void)
+static tflite::MicroInterpreter* CreateStaticInterpreter(void)
 {
-    constexpr int32_t kTensorArenaSize = 1088 + 24 + 5968;
+    constexpr int32_t kTensorArenaSize = 80 * 1024;
     static uint8_t tensor_arena[kTensorArenaSize];
     const tflite::Model* model = tflite::GetModel(g_model);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
@@ -93,9 +93,9 @@ int main(void) {
     PRINT("Hello, world!\n");
 
     /* Create interpreter */
-    tflite::MicroInterpreter* interpreter = createStaticInterpreter();
+    tflite::MicroInterpreter* interpreter = CreateStaticInterpreter();
     if (!interpreter) {
-        PRINT_E("createStaticInterpreter failed\n");
+        PRINT_E("CreateStaticInterpreter failed\n");
         HALT();
     }
     TfLiteTensor* input = interpreter->input(0);
@@ -114,7 +114,7 @@ int main(void) {
 
     while (1) {
         /* Generate feature */
-        audio_provider.DebugWriteData(32);
+        audio_provider.DebugWriteData(500);
         const int32_t current_time = audio_provider.GetLatestAudioTimestamp();
         if (current_time < 0 || current_time == previous_time) continue;
 

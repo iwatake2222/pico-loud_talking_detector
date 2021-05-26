@@ -28,7 +28,8 @@ constexpr int kAudioSampleFrequency = 16000;
 // The following values are derived from values used during model training.
 // If you change the way you preprocess the input, update all these constants.
 constexpr int kFeatureSliceSize = 40;
-constexpr int kFeatureSliceCount = 49;
+// constexpr int kFeatureSliceCount = 49;  // for 1 sec (1000 / 20 - 1)
+constexpr int kFeatureSliceCount = (10000 / 20 - 1); // for 10 sec
 constexpr int kFeatureElementCount = (kFeatureSliceSize * kFeatureSliceCount);
 constexpr int kFeatureSliceStrideMs = 20;
 constexpr int kFeatureSliceDurationMs = 30;
@@ -37,7 +38,7 @@ constexpr int kFeatureSliceDurationMs = 30;
 constexpr int kSilenceIndex = 0;
 constexpr int kUnknownIndex = 1;
 // If you modify the output categories, you need to update the following values.
-constexpr int kCategoryCount = 7;
+constexpr int kCategoryCount = 4;
 extern const char* kCategoryLabels[kCategoryCount];
 
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_MICRO_SPEECH_MICRO_FEATURES_MICRO_MODEL_SETTINGS_H_
