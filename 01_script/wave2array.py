@@ -1,82 +1,35 @@
 #-- coding: utf-8 --
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import wave
- 
-def binary2float(frames, length, sampwidth):
-    # binary to int
-    if sampwidth==1:
-        data = np.frombuffer(frames, dtype=np.uint8)
-        data = data - 128
-    elif sampwidth==2:
-        data = np.frombuffer(frames, dtype=np.int16)
-    elif sampwidth==3:
-        a8 = np.fromstring(frames, dtype=np.uint8)
-        tmp = np.empty([length, 4], dtype=np.uint8)
-        tmp[:, :sampwidth] = a8.reshape(-1, sampwidth)
-        tmp[:, sampwidth:] = (tmp[:, sampwidth-1:sampwidth] >> 7) * 255
-        data = tmp.view("int32")[:, 0]
-    elif sampwidth==4:
-        data = np.frombuffer(frames, dtype=np.int32)
-    # Normalize (int to float)
-    # data = data.astype(float)/(2*(sampwidth-1))
-    return data
- 
-def float2binary(data, sampwidth):
-    # Normalize (float to int)
-    data = (data(2 * (sampwidth-1)-1)).reshape(data.size, 1)
-    # int to binary
-    if sampwidth==1:
-        data = data+128
-        frames = data.astype(np.uint8).tostring()
-    elif sampwidth==2:
-        frames = data.astype(np.int16).tostring()
-    elif sampwidth==3:
-        a32 = np.asarray(data, dtype = np.int32)
-        a8 = (a32.reshape(a32.shape + (1,)) >> np.array([0, 8, 16])) & 255
-        frames = a8.astype(np.uint8).tostring()
-    elif sampwidth==4:
-        frames = data.astype(np.int32).tostring()
-    return frames
- 
-def read_wave(file_name, start=0, end=0):
-    file = wave.open(file_name, "rb") # open file
-    sampwidth = file.getsampwidth()
-    nframes = file.getnframes()
-    file.setpos(start)
-    if end == 0:
-        length = nframes-start
-    else:
-        length = end-start+1
-    frames = file.readframes(length)
-    file.close() # close file
-    return binary2float(frames, length, sampwidth) # binary to float
- 
-def write_wave(file_name, data, sampwidth=3, fs=48000):
-    file = wave.open(file_name, "wb") # open file
-    # setting parameters
-    file.setnchannels(1)
-    file.setsampwidth(sampwidth)
-    file.setframerate(fs)
-    frames = float2binary(data, sampwidth) # float to binary
-    file.writeframes(frames)
-    file.close() # close file
- 
-def getParams(file_name):
-    file = wave.open(file_name) # open file
-    params = file.getparams()
-    file.close() # close file
-    return params
+import librosa
+import soundfile
+import argparse
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Convert wave to array")
+    parser.add_argument("-i", "--input_filename", help="input wav filename", type=str, required=False, default="1-100032-A-0.wav")
+    parser.add_argument("-o", "--output_directory", help="output_directory", type=str, required=False, default="./")
+    parser.add_argument("-s", "--sampling_rate", help="sampling rate[Hz]", type=int, required=False, default=16000)
+    args = parser.parse_args()
+    input_filename = args.input_filename
+    output_directory = args.output_directory
+    sampling_rate = args.sampling_rate
+    print(f"input_filename = {input_filename}, output_directory = {output_directory}, sampling_rate = {sampling_rate}")
+    os.makedirs(output_directory, exist_ok=True)
 
-	
-data = read_wave("./00f0204f_nohash_0.wav")
+    basename, ext = os.path.splitext(os.path.basename(input_filename))
+    data, sr = librosa.core.load(input_filename, sr=sampling_rate, mono=True)
+    data = data * 2**15
 
-plt.plot(data)
-plt.show()
+    with open(output_directory + "/" + basename + ".txt", "w") as f:
+        for d in data:
+            f.write(str(int(d)) + ", ")
 
-for d in data:
-    print(d, end=", ")
+    plt.plot(data)
+    plt.show()
 
-# print(data)
-# print("hello2")
+    # data = data / 2**15
+    # soundfile.write("a.wav", data, samplerate=16000, subtype="PCM_16")
+
