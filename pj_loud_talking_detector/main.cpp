@@ -91,7 +91,34 @@ int main(void) {
     stdio_init_all();
     sleep_ms(1000);		// wait until UART connected
 #endif
+
     PRINT("Hello, world!\n");
+
+    /* Create feature provider */
+    static int8_t feature_buffer[kFeatureElementCount];
+    static FeatureProvider feature_provider(kFeatureElementCount, feature_buffer);
+    static AudioProvider audio_provider;
+    audio_provider.Initialize();
+    int32_t previous_time = 0;
+
+#if 0
+    /* for recording */
+    /* memo. increase (kBufferSize = 400). Call Stop() when overflow */
+    while(audio_provider.GetLatestAudioTimestamp() < 0);
+    int32_t current_time = audio_provider.GetLatestAudioTimestamp();
+    while(1) {
+        int16_t* audio_samples = nullptr;
+        int32_t audio_samples_size = 0;
+        audio_provider.GetAudioSamples(current_time,
+                    kFeatureSliceDurationMs, &audio_samples_size,
+                    &audio_samples);
+        if (audio_samples_size <= 0) continue;
+        for (int32_t i = 0; i < audio_samples_size; i++) {
+            printf("%d,", audio_samples[i]);
+        }
+        current_time += audio_samples_size * 1000 / 16000;
+    }
+#endif
 
     /* Create interpreter */
     tflite::MicroInterpreter* interpreter = CreateStaticInterpreter();
@@ -101,13 +128,6 @@ int main(void) {
     }
     TfLiteTensor* input = interpreter->input(0);
     TfLiteTensor* output = interpreter->output(0);
-
-    /* Create feature provider */
-    static int8_t feature_buffer[kFeatureElementCount];
-    static FeatureProvider feature_provider(kFeatureElementCount, feature_buffer);
-    static AudioProvider audio_provider;
-    audio_provider.Initialize();
-    int32_t previous_time = 0;
 
     /* Create majority vote to remove noise from the result (use int8 to avoid unnecessary dequantization (calculation)) */
     //MajorityVote<float> majority_vote;
