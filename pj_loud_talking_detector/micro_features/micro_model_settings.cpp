@@ -16,8 +16,8 @@ limitations under the License.
 #include "micro_features/micro_model_settings.h"
 
 const char* kCategoryLabels[kCategoryCount] = {
-    "silence",
-    "unknown",
+    // "silence",
+    // "unknown",
     "talking",
     "not_talking",
 };

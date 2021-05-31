@@ -181,13 +181,13 @@ int main(void) {
             char buff[OledSh1106::WIDTH / OledSh1106::FONT_WIDTH - 1];
             snprintf(buff, sizeof(buff), "%s: %.03f\n", kCategoryLabels[i], y);
             oled.printText(buff);
-            if (y > 0.95) {
+            if (y > 0.8) {
                 PRINT("%s", buff);
                 detected_index = i;
             }
         }
         oled.setCharPos(5, 6);
-        if (detected_index == 2) {
+        if (detected_index == 0) {
             oled.printText(">>> TALKING <<<");
         } else {
             oled.printText("               ");
