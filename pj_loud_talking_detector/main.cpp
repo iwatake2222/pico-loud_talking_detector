@@ -40,7 +40,7 @@ limitations under the License.
 #include "utility_macro.h"
 #include "audio_provider.h"
 #include "majority_vote.h"
-#include "OledSh1106.h"
+#include "oled.h"
 
 /*** MACRO ***/
 #define TAG "main"
@@ -94,6 +94,13 @@ int main(void) {
 
     PRINT("Hello, world!\n");
 
+    /* Create Display */
+    Oled oled;
+    oled.Initialize();
+    oled.FillRect(0, 0, 0, Oled::kWidth, Oled::kHeight);
+    oled.SetCharPos(8, 4);
+    oled.PrintText("Hello!!");
+
     /* Create feature provider */
     static int8_t feature_buffer[kFeatureElementCount];
     static FeatureProvider feature_provider(kFeatureElementCount, feature_buffer);
@@ -133,13 +140,6 @@ int main(void) {
     //MajorityVote<float> majority_vote;
     MajorityVote<int32_t> majority_vote;
 
-    /* Create Display */
-    OledSh1106 oled;
-    oled.initialize();
-    oled.fillRect(0, 0, 0, OledSh1106::WIDTH, OledSh1106::HEIGHT);
-    oled.setCharPos(8, 4);
-    oled.printText("Hello!!");
-
     while (1) {
         /* Generate feature */
         audio_provider.DebugWriteData(500);
@@ -177,20 +177,20 @@ int main(void) {
         for (int32_t i = 0; i < kCategoryCount; i++) {
             current_score_list[i] = y_quantized[i];
             float y = (y_quantized[i] - output->params.zero_point) * output->params.scale;
-            oled.setCharPos(1, i + 1);
-            char buff[OledSh1106::WIDTH / OledSh1106::FONT_WIDTH - 1];
+            oled.SetCharPos(1, i + 1);
+            char buff[Oled::kWidth / Oled::kFontWidth - 1];
             snprintf(buff, sizeof(buff), "%s: %.03f\n", kCategoryLabels[i], y);
-            oled.printText(buff);
+            oled.PrintText(buff);
             if (y > 0.8) {
                 PRINT("%s", buff);
                 detected_index = i;
             }
         }
-        oled.setCharPos(5, 6);
+        oled.SetCharPos(5, 6);
         if (detected_index == 0) {
-            oled.printText(">>> TALKING <<<");
+            oled.PrintText(">>> TALKING <<<");
         } else {
-            oled.printText("               ");
+            oled.PrintText("               ");
         }
 
         /* From some experiments, slices_to_drop is 3 ~ 5. It means that the interval is 60 ~ 100 msec */

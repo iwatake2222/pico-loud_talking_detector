@@ -34,6 +34,7 @@ if(BUILD_ON_PC)
     target_link_libraries(${BinName} "generic-tflmicro")
     add_definitions(-DBUILD_ON_PC)
 else()
+    add_definitions(-DPLATFORM_PIPICO)
     pico_enable_stdio_usb(${BinName} 1)
     pico_enable_stdio_uart(${BinName} 1)
 
