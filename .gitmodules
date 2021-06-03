@@ -7,3 +7,6 @@
 [submodule "pico-tflmicro"]
 	path = pico-tflmicro
 	url = https://github.com/iwatake2222/pico-tflmicro
+[submodule "pico-microphone"]
+	path = pico-microphone
+	url = https://github.com/iwatake2222/pico-microphone.git
