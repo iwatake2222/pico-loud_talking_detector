@@ -47,6 +47,7 @@ else()
         hardware_irq
         hardware_i2c
         pico_multicore
+        pico_pdm_microphone
     )
 
     pico_add_extra_outputs(${BinName})
