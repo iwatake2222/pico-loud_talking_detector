@@ -5,6 +5,7 @@
 
 #include "oled.h"
 #include "oled_cmd.h"
+#include "my_font.h"
 
 #if defined(PLATFORM_LINUX)
 #include <unistd.h>
@@ -146,9 +147,8 @@ void Oled::PrintText(const char* text)
 
 void Oled::DrawChar(char c)
 {
-	extern uint8_t font[];
 	for (uint8_t i = 0; i < kFontWidth; i++ ) {	
-		uint8_t line = *(font + (c * kFontWidth) + i);
+		uint8_t line = *(kMyFont + (c * kFontWidth) + i);
 		SendData(line);
 	}
 }
