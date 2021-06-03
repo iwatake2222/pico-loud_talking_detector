@@ -1,14 +1,16 @@
 pico              OLED
 ---------------------------------------
-3 (GND)            GND
+3  (GND)           GND
 36 (3V3)           VDD
-6 (GP4=SPI0 i2c0)  SDA
-7 (GP5=SPI0 i2c0)  SCL
+24 (GP18=i2c1)     SDA
+25 (GP19=i2c1)     SCL
 
 
-pico                Microphone
+pico                Microphone (PDM SPM0405HD4H)
 ---------------------------------------
-3 (GND)             GND
+3  (GND)            GND
 36 (3V3)            VDD
-31 (GP26 = ADC0)    MIC_OUT
+31 (GP26)           DAT
+32 (GP27)           CLK
+
 

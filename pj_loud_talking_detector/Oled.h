@@ -10,11 +10,9 @@
 class Oled
 {
 public:
-	/* Fixed config by device */
-	static constexpr bool    kIsSh1106 = true;
+	/* Fixed config for device */
+	static constexpr bool    kIsSh1106 = false;
 	static constexpr uint8_t kSlaveAddress = 0x3C;
-	static constexpr uint8_t kGpioNumSda = 4;	// GP4
-	static constexpr uint8_t kGpioNumScl = 5;	// GP5
 	static constexpr uint8_t kWidth  = 128;
 	static constexpr uint8_t kHeight = 64;
 	static constexpr uint8_t kPageSize = 8;
@@ -29,15 +27,13 @@ public:
 	static constexpr uint8_t kFontHeight = 8;
 
 private:
-	// x, y is pixel
-	uint8_t current_pos_x_;
-	uint8_t current_pos_y_;
-
-private:
 #if defined(PLATFORM_LINUX)
 	const char *I2C_DEV_NAME = "/dev/i2c-1";
 	int32_t fd_;
 #elif defined(PLATFORM_PIPICO)
+	static constexpr uint8_t kGpioNumSda = 18;	// GP18
+	static constexpr uint8_t kGpioNumScl = 19;	// GP19
+	static constexpr int32_t kI2cNum = 1;		// i2c1
 #endif
 
 private:
@@ -62,6 +58,12 @@ public:
 	void SetCharPos(uint8_t textX, uint8_t textY);
 	void PutChar(char c);
 	void PrintText(const char* text);
+
+private:
+	// x, y is pixel
+	uint8_t current_pos_x_;
+	uint8_t current_pos_y_;
+
 };
 
 #endif /* OLED_H_ */
