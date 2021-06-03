@@ -123,6 +123,14 @@ int32_t AdcBuffer::Stop(void) {
     return kRetOk;
 }
 
-RingBlockBuffer<uint8_t>& AdcBuffer::GetRingBlockBuffer(void) {
+RingBlockBuffer<uint8_t>& AdcBuffer::GetRingBlockBuffer8(void) {
     return adc_block_buffer_;
 }
+
+RingBlockBuffer<int16_t>& AdcBuffer::GetRingBlockBuffer16(void) {
+    PRINT_E("Not supported\n");
+    HALT();
+    RingBlockBuffer<int16_t> dummy;
+    return dummy;
+}
+

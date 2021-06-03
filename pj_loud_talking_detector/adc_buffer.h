@@ -45,7 +45,8 @@ public:
     int32_t Finalize(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
-    RingBlockBuffer<uint8_t>& GetRingBlockBuffer(void) override;
+    RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) override;
+    RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) override;
 
 public:
     static std::function<void(void)> irq_handler_static_;

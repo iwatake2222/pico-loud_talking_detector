@@ -13,22 +13,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TEST_BUFFER_H_
-#define TEST_BUFFER_H_
+#ifndef PCM_BUFFER_H_
+#define PCM_BUFFER_H_
 
 #include <cstdint>
+#include <functional>
+
+#include "hardware/adc.h"
+#include "hardware/dma.h"
+#include "hardware/irq.h"
+
 #include "ring_block_buffer.h"
 #include "audio_buffer.h"
 
-class TestBuffer : public AudioBuffer {
+class PdmBuffer : public AudioBuffer {
 public:
-    TestBuffer()
+    static constexpr int32_t ADC_CLOCK  = (48 * 1000 * 1000);        // Fixed value (48MHz)
+    static constexpr int32_t BUFFER_NUM = 4;
+
+public:
+    PdmBuffer()
         : buffer_num_(0)
         , capture_channel_(0)
         , capture_depth_(0)
         , sampling_rate_(0)
-    {};
-    ~TestBuffer() {}
+        , dma_channel_(0)
+     {};
+    ~PdmBuffer() {}
+
     int32_t Initialize(const Config& config) override;
     int32_t Finalize(void) override;
     int32_t Start(void) override;
@@ -37,14 +49,19 @@ public:
     RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) override;
 
 public:
-    void DebugWriteData(int32_t duration_ms);
+    static std::function<void(void)> on_pdm_samples_ready_static_;
+
+private:
+    void on_pdm_samples_ready_static();
 
 private:
     int32_t buffer_num_;
     int32_t capture_channel_;
     int32_t capture_depth_;
     int32_t sampling_rate_;
-    RingBlockBuffer<uint8_t> test_block_buffer_;
+    RingBlockBuffer<int16_t> adc_block_buffer_;
+    dma_channel_config dma_config_;
+    int32_t dma_channel_;
 };
 
-#endif  // TEST_BUFFER_H_
+#endif

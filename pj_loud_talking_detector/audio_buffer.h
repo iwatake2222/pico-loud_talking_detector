@@ -38,7 +38,8 @@ public:
     virtual int32_t Finalize(void) = 0;
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
-    virtual RingBlockBuffer<uint8_t>& GetRingBlockBuffer(void) = 0;
+    virtual RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) = 0;
+    virtual RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) = 0;
 };
 
 #endif  // AUDIO_BUFFER_H_

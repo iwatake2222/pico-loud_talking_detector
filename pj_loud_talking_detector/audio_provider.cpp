@@ -26,6 +26,7 @@ limitations under the License.
 #include "test_buffer.h"
 #else
 #include "adc_buffer.h"
+#include "pdm_buffer.h"
 #endif
 
 /*** MACRO ***/
@@ -47,7 +48,8 @@ int32_t AudioProvider::Initialize() {
 #ifdef USE_TEST_BUFFER
     audio_buffer_ = std::unique_ptr<AudioBuffer>(new TestBuffer());
 #else
-    audio_buffer_ = std::unique_ptr<AudioBuffer>(new AdcBuffer());
+    // audio_buffer_ = std::unique_ptr<AudioBuffer>(new AdcBuffer());
+    audio_buffer_ = std::unique_ptr<AudioBuffer>(new PdmBuffer());
 #endif
     if (!audio_buffer_) {
         PRINT_E("AudioBuffer null\n");
@@ -86,7 +88,7 @@ int32_t AudioProvider::Finalize() {
 int32_t AudioProvider::GetAudioSamples(
     int32_t start_time_ms, int32_t duration_time_ms,
     int32_t* audio_samples_size, int16_t** audio_samples) {
-    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer();
+    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer16();
 
     int32_t time_ms_at_end = time_ms_at_index0_ + valid_data_num_ / kSamplePerMs;
     if (start_time_ms < time_ms_at_index0_) {
@@ -108,7 +110,8 @@ int32_t AudioProvider::GetAudioSamples(
                     PRINT("[AudioProvider::initialize] shouldn't reach here\n");
                     break;
                 }
-                local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+                local_buffer_[valid_data_num_] = data;
+                // local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
                 //local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 0) * 1;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
                 valid_data_num_++;
             }
@@ -126,7 +129,8 @@ int32_t AudioProvider::GetAudioSamples(
                         PRINT("[AudioProvider::initialize] shouldn't reach here\n");
                         break;
                     }
-                    local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+                    local_buffer_[valid_data_num_] = data;
+                    // local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
                     //local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 0) * 1;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
                     valid_data_num_++;
                 }
@@ -144,7 +148,7 @@ int32_t AudioProvider::GetAudioSamples(
 }
 
 int32_t AudioProvider::GetLatestAudioTimestamp() {
-    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer();
+    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer16();
     int32_t time_wp_ms = ring_buffer.accumulated_stored_data_num() - 1;     // need -1, because the data on WP is currently written by DMA
     time_wp_ms -= 1;    // use the beginning time of the block (to work with feature_privider logic to calculate slices_needed)
     time_wp_ms *= kDurationPerBlock;

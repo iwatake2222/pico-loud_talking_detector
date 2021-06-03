@@ -65,9 +65,15 @@ int32_t TestBuffer::Stop(void) {
     return kRetOk;
 }
 
-
-RingBlockBuffer<uint8_t>& TestBuffer::GetRingBlockBuffer(void) {
+RingBlockBuffer<uint8_t>& TestBuffer::GetRingBlockBuffer8(void) {
     return test_block_buffer_;
+}
+
+RingBlockBuffer<int16_t>& TestBuffer::GetRingBlockBuffer16(void) {
+    PRINT_E("Not supported\n");
+    HALT();
+    RingBlockBuffer<int16_t> dummy;
+    return dummy;
 }
 
 void TestBuffer::DebugWriteData(int32_t duration_ms) {
