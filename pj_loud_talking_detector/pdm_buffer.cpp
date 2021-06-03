@@ -32,22 +32,14 @@ extern "C" {
 /*** FUNCTION ***/
 
 /*** GLOBAL VARIABLE ***/
-
-
-
-
-#define SAMPLE_BUFFER_SIZE 512
-const struct pdm_microphone_config kPdmConfig = {
+static struct pdm_microphone_config pdm_config = {
   .gpio_data = 26,
   .gpio_clk = 27,
   .pio = pio0,
   .pio_sm = 0,
   .sample_rate = 16000,
-  .sample_buffer_size = SAMPLE_BUFFER_SIZE,
+  .sample_buffer_size = 16,
 };
-int16_t sample_buffer[SAMPLE_BUFFER_SIZE];
-volatile int samples_read = 0;
-
 
 std::function<void(void)> PdmBuffer::on_pdm_samples_ready_static_;
 
@@ -57,14 +49,14 @@ static void on_pdm_samples_ready() {
 
 void PdmBuffer::on_pdm_samples_ready_static() {
 
-    int16_t* p = adc_block_buffer_.WritePtr();
+    int16_t* p = block_buffer_.WritePtr();
     if (p == nullptr) {
         PRINT_E("PdmBuffer: overflow\n");
         // Stop();
-        p = adc_block_buffer_.GetLatestWritePtr();
+        p = block_buffer_.GetLatestWritePtr();
     }
-    samples_read = pdm_microphone_read(p, SAMPLE_BUFFER_SIZE);
-    if (samples_read != SAMPLE_BUFFER_SIZE) {
+    int32_t samples_read = pdm_microphone_read(p, block_size_);
+    if (samples_read != block_size_) {
         PRINT_E("read size error\n");
     }
 }
@@ -73,16 +65,17 @@ void PdmBuffer::on_pdm_samples_ready_static() {
 int32_t PdmBuffer::Initialize(const Config& config) {
     on_pdm_samples_ready_static_ = [this] { on_pdm_samples_ready_static(); };
     /* Set parameters */
-    buffer_num_ = config.buffer_num;
-    capture_channel_ = config.capture_channel;
-    capture_depth_ = config.capture_depth;
+    buffer_size_ = config.buffer_size;
+    block_size_ = config.block_size;
     sampling_rate_ = config.sampling_rate;
+    pdm_config.sample_rate = sampling_rate_;
+    pdm_config.sample_buffer_size = block_size_;
 
     /* Reset buffer */
-    adc_block_buffer_.Initialize(buffer_num_, capture_depth_);
+    block_buffer_.Initialize(buffer_size_, block_size_);
 
     /* Initialize PDM Microphone */
-    if (pdm_microphone_init(&kPdmConfig) < 0) {
+    if (pdm_microphone_init(&pdm_config) < 0) {
         PRINT_E("PDM microphone initialization failed!\n");
         HALT();
     }
@@ -109,13 +102,17 @@ int32_t PdmBuffer::Stop(void) {
     return kRetOk;
 }
 
+bool PdmBuffer::IsInt16(void) {
+    return true;
+}
+
 RingBlockBuffer<uint8_t>& PdmBuffer::GetRingBlockBuffer8(void) {
     PRINT_E("Not supported\n");
     HALT();
-    RingBlockBuffer<uint8_t> dummy;
+    static RingBlockBuffer<uint8_t> dummy;
     return dummy;
 }
 
 RingBlockBuffer<int16_t>& PdmBuffer::GetRingBlockBuffer16(void) {
-    return adc_block_buffer_;
+    return block_buffer_;
 }

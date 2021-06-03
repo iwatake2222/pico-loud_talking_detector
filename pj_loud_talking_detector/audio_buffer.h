@@ -27,9 +27,8 @@ public:
     };
 
     typedef struct {
-        int32_t buffer_num;
-        int32_t capture_channel;
-        int32_t capture_depth;  /* = block size */
+        int32_t buffer_size;
+        int32_t block_size;
         int32_t sampling_rate;
     } Config;
 
@@ -38,6 +37,7 @@ public:
     virtual int32_t Finalize(void) = 0;
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
+    virtual bool    IsInt16(void) = 0;
     virtual RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) = 0;
     virtual RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) = 0;
 };

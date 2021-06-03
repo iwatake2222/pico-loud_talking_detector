@@ -29,13 +29,12 @@ limitations under the License.
 class AdcBuffer : public AudioBuffer {
 public:
     static constexpr int32_t ADC_CLOCK  = (48 * 1000 * 1000);        // Fixed value (48MHz)
-    static constexpr int32_t BUFFER_NUM = 4;
+    static constexpr int32_t kAdcNumber = 2;
 
 public:
     AdcBuffer()
-        : buffer_num_(0)
-        , capture_channel_(0)
-        , capture_depth_(0)
+        : buffer_size_(0)
+        , block_size_(0)
         , sampling_rate_(0)
         , dma_channel_(0)
      {};
@@ -45,6 +44,7 @@ public:
     int32_t Finalize(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    bool    IsInt16(void) override;
     RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) override;
     RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) override;
 
@@ -55,9 +55,8 @@ private:
     void IrqHandler();
 
 private:
-    int32_t buffer_num_;
-    int32_t capture_channel_;
-    int32_t capture_depth_;
+    int32_t buffer_size_;
+    int32_t block_size_;
     int32_t sampling_rate_;
     RingBlockBuffer<uint8_t> adc_block_buffer_;
     dma_channel_config dma_config_;

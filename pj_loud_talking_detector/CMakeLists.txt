@@ -21,6 +21,7 @@ list(FILTER SRC EXCLUDE REGEX  ".*/01_script/.*")
 
 if(BUILD_ON_PC)
     list(FILTER SRC EXCLUDE REGEX  ".*adc_buffer")
+    list(FILTER SRC EXCLUDE REGEX  ".*pdm_buffer")
 endif()
 
 target_sources(${BinName}

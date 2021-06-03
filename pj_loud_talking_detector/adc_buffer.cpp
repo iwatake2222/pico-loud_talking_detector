@@ -52,7 +52,7 @@ void AdcBuffer::IrqHandler() {
     dma_channel_configure(dma_channel_, &dma_config_,
         p,              // dst
         &adc_hw->fifo,  // src
-        capture_depth_, // transfer count
+        block_size_,    // transfer count
         true            // start immediately
     );
 
@@ -62,18 +62,17 @@ void AdcBuffer::IrqHandler() {
 int32_t AdcBuffer::Initialize(const Config& config) {
     irq_handler_static_ = [this] { IrqHandler(); };
     /* Set parameters */
-    buffer_num_ = config.buffer_num;
-    capture_channel_ = config.capture_channel;
-    capture_depth_ = config.capture_depth;
+    buffer_size_ = config.buffer_size;
+    block_size_ = config.block_size;
     sampling_rate_ = config.sampling_rate;
 
     /* Reset buffer */
-    adc_block_buffer_.Initialize(buffer_num_, capture_depth_);
+    adc_block_buffer_.Initialize(buffer_size_, block_size_);
 
     /* Initialize ADC */
     adc_init();
-    adc_gpio_init(26 + capture_channel_);
-    adc_select_input(capture_channel_);
+    adc_gpio_init(26 + kAdcNumber);
+    adc_select_input(kAdcNumber);
     adc_fifo_setup(
         true,    // Write each completed conversion to the sample FIFO
         true,    // Enable DMA data request (DREQ)
@@ -123,6 +122,10 @@ int32_t AdcBuffer::Stop(void) {
     return kRetOk;
 }
 
+bool AdcBuffer::IsInt16(void) {
+    return false;
+}
+
 RingBlockBuffer<uint8_t>& AdcBuffer::GetRingBlockBuffer8(void) {
     return adc_block_buffer_;
 }
@@ -130,7 +133,7 @@ RingBlockBuffer<uint8_t>& AdcBuffer::GetRingBlockBuffer8(void) {
 RingBlockBuffer<int16_t>& AdcBuffer::GetRingBlockBuffer16(void) {
     PRINT_E("Not supported\n");
     HALT();
-    RingBlockBuffer<int16_t> dummy;
+    static RingBlockBuffer<int16_t> dummy;
     return dummy;
 }
 

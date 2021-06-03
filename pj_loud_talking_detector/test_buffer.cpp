@@ -35,13 +35,12 @@ static int32_t s_current_test_data_index = 0;
 /*** FUNCTION ***/
 int32_t TestBuffer::Initialize(const Config& config) {
     /* Set parameters */
-    buffer_num_ = config.buffer_num;
-    capture_channel_ = config.capture_channel;	// not in use
-    capture_depth_ = config.capture_depth;
+    buffer_size_ = config.buffer_size;
+    block_size_ = config.block_size;
     sampling_rate_ = config.sampling_rate;
 
     /* Reset buffer */
-    test_block_buffer_.Initialize(buffer_num_, capture_depth_);
+    test_block_buffer_.Initialize(buffer_size_, block_size_);
 
     const int32_t kTestDataNum = sizeof(s_testAudioData) / sizeof(int16_t);
     for (int32_t i = 0; i < kTestDataNum; i++) {
@@ -65,6 +64,10 @@ int32_t TestBuffer::Stop(void) {
     return kRetOk;
 }
 
+bool TestBuffer::IsInt16(void) {
+    return false;
+}
+
 RingBlockBuffer<uint8_t>& TestBuffer::GetRingBlockBuffer8(void) {
     return test_block_buffer_;
 }
@@ -72,12 +75,12 @@ RingBlockBuffer<uint8_t>& TestBuffer::GetRingBlockBuffer8(void) {
 RingBlockBuffer<int16_t>& TestBuffer::GetRingBlockBuffer16(void) {
     PRINT_E("Not supported\n");
     HALT();
-    RingBlockBuffer<int16_t> dummy;
+    static RingBlockBuffer<int16_t> dummy;
     return dummy;
 }
 
 void TestBuffer::DebugWriteData(int32_t duration_ms) {
-    const int32_t kUpdateNum = duration_ms * sampling_rate_ / 1000 / capture_depth_;
+    const int32_t kUpdateNum = duration_ms * sampling_rate_ / 1000 / block_size_;
     const int32_t kTestDataNum = static_cast<int32_t>(s_test_data.size());
 
     if (s_current_test_data_index == kTestDataNum) return;  // do not write debug data exceed prepared test data
@@ -90,7 +93,7 @@ void TestBuffer::DebugWriteData(int32_t duration_ms) {
             break;
         }
 
-        for (int32_t i = 0; i < capture_depth_; i++) {
+        for (int32_t i = 0; i < block_size_; i++) {
             p[i] = s_test_data[s_current_test_data_index];
             s_current_test_data_index++;
             if (s_current_test_data_index == kTestDataNum) return;

@@ -32,6 +32,8 @@ limitations under the License.
 /*** MACRO ***/
 #ifdef BUILD_ON_PC
 #define USE_TEST_BUFFER
+#else
+#define IS_16_AUDIO
 #endif
 
 #define TAG "AudioProvider"
@@ -48,8 +50,11 @@ int32_t AudioProvider::Initialize() {
 #ifdef USE_TEST_BUFFER
     audio_buffer_ = std::unique_ptr<AudioBuffer>(new TestBuffer());
 #else
-    // audio_buffer_ = std::unique_ptr<AudioBuffer>(new AdcBuffer());
+#ifdef IS_16_AUDIO
     audio_buffer_ = std::unique_ptr<AudioBuffer>(new PdmBuffer());
+#else
+    audio_buffer_ = std::unique_ptr<AudioBuffer>(new AdcBuffer());
+#endif
 #endif
     if (!audio_buffer_) {
         PRINT_E("AudioBuffer null\n");
@@ -57,9 +62,8 @@ int32_t AudioProvider::Initialize() {
     }
 
     AudioBuffer::Config audio_buffer_config;
-    audio_buffer_config.buffer_num = kBufferSize;
-    audio_buffer_config.capture_channel = 0;
-    audio_buffer_config.capture_depth = kBlockSize;
+    audio_buffer_config.buffer_size = kBufferSize;
+    audio_buffer_config.block_size = kBlockSize;
     audio_buffer_config.sampling_rate = kSamplingRate;
     if (audio_buffer_->Initialize(audio_buffer_config) != AudioBuffer::kRetOk) {
         PRINT_E("AudioBuffer Initialize\n");
@@ -88,7 +92,11 @@ int32_t AudioProvider::Finalize() {
 int32_t AudioProvider::GetAudioSamples(
     int32_t start_time_ms, int32_t duration_time_ms,
     int32_t* audio_samples_size, int16_t** audio_samples) {
+#ifdef IS_16_AUDIO
     auto& ring_buffer = audio_buffer_->GetRingBlockBuffer16();
+#else
+    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer8();
+#endif
 
     int32_t time_ms_at_end = time_ms_at_index0_ + valid_data_num_ / kSamplePerMs;
     if (start_time_ms < time_ms_at_index0_) {
@@ -110,9 +118,11 @@ int32_t AudioProvider::GetAudioSamples(
                     PRINT("[AudioProvider::initialize] shouldn't reach here\n");
                     break;
                 }
+#ifdef IS_16_AUDIO
                 local_buffer_[valid_data_num_] = data;
-                // local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
-                //local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 0) * 1;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+#else
+                local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+#endif
                 valid_data_num_++;
             }
         }
@@ -129,9 +139,11 @@ int32_t AudioProvider::GetAudioSamples(
                         PRINT("[AudioProvider::initialize] shouldn't reach here\n");
                         break;
                     }
+#ifdef IS_16_AUDIO
                     local_buffer_[valid_data_num_] = data;
-                    // local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
-                    //local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 0) * 1;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+#else
+                    local_buffer_[valid_data_num_] = (static_cast<int16_t>(data) - 128) * 256;	// uint8_t (0 - 255) -> int16_t (-32768 - 32767)
+#endif
                     valid_data_num_++;
                 }
                 time_ms_at_index0_ = time_rp_ms;
@@ -148,7 +160,11 @@ int32_t AudioProvider::GetAudioSamples(
 }
 
 int32_t AudioProvider::GetLatestAudioTimestamp() {
+#ifdef IS_16_AUDIO
     auto& ring_buffer = audio_buffer_->GetRingBlockBuffer16();
+#else
+    auto& ring_buffer = audio_buffer_->GetRingBlockBuffer8();
+#endif
     int32_t time_wp_ms = ring_buffer.accumulated_stored_data_num() - 1;     // need -1, because the data on WP is currently written by DMA
     time_wp_ms -= 1;    // use the beginning time of the block (to work with feature_privider logic to calculate slices_needed)
     time_wp_ms *= kDurationPerBlock;

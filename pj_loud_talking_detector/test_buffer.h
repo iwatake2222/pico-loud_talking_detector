@@ -23,9 +23,8 @@ limitations under the License.
 class TestBuffer : public AudioBuffer {
 public:
     TestBuffer()
-        : buffer_num_(0)
-        , capture_channel_(0)
-        , capture_depth_(0)
+        : buffer_size_(0)
+        , block_size_(0)
         , sampling_rate_(0)
     {};
     ~TestBuffer() {}
@@ -33,6 +32,7 @@ public:
     int32_t Finalize(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    bool    IsInt16(void) override;
     RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) override;
     RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) override;
 
@@ -40,9 +40,8 @@ public:
     void DebugWriteData(int32_t duration_ms);
 
 private:
-    int32_t buffer_num_;
-    int32_t capture_channel_;
-    int32_t capture_depth_;
+    int32_t buffer_size_;
+    int32_t block_size_;
     int32_t sampling_rate_;
     RingBlockBuffer<uint8_t> test_block_buffer_;
 };

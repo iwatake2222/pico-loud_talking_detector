@@ -28,16 +28,10 @@ limitations under the License.
 
 class PdmBuffer : public AudioBuffer {
 public:
-    static constexpr int32_t ADC_CLOCK  = (48 * 1000 * 1000);        // Fixed value (48MHz)
-    static constexpr int32_t BUFFER_NUM = 4;
-
-public:
     PdmBuffer()
-        : buffer_num_(0)
-        , capture_channel_(0)
-        , capture_depth_(0)
+        : buffer_size_(0)
+        , block_size_(0)
         , sampling_rate_(0)
-        , dma_channel_(0)
      {};
     ~PdmBuffer() {}
 
@@ -45,6 +39,7 @@ public:
     int32_t Finalize(void) override;
     int32_t Start(void) override;
     int32_t Stop(void) override;
+    bool    IsInt16(void) override;
     RingBlockBuffer<uint8_t>& GetRingBlockBuffer8(void) override;
     RingBlockBuffer<int16_t>& GetRingBlockBuffer16(void) override;
 
@@ -55,13 +50,11 @@ private:
     void on_pdm_samples_ready_static();
 
 private:
-    int32_t buffer_num_;
-    int32_t capture_channel_;
-    int32_t capture_depth_;
+    int32_t buffer_size_;
+    int32_t block_size_;
     int32_t sampling_rate_;
-    RingBlockBuffer<int16_t> adc_block_buffer_;
-    dma_channel_config dma_config_;
-    int32_t dma_channel_;
+    RingBlockBuffer<int16_t> block_buffer_;
+
 };
 
 #endif
