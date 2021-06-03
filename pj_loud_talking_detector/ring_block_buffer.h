@@ -53,6 +53,7 @@ public:
         buffer_.resize(buffer_size);
         for (auto& block : buffer_) {
             block.resize(block_size);
+            std::fill(block.begin(), block.end(), 0);
         }
 
         wp_ = 0;

@@ -47,13 +47,15 @@ limitations under the License.
 #define PRINT(...)   UTILITY_MACRO_PRINT(TAG, __VA_ARGS__)
 #define PRINT_E(...) UTILITY_MACRO_PRINT_E(TAG, __VA_ARGS__)
 
+static constexpr float kScoreThreshold = 0.8;
+static constexpr int32_t kCategoryIndexOfTalking = 0;
+
 /*** GLOBAL_VARIABLE ***/
 static tflite::MicroErrorReporter micro_error_reporter;
 static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
 /*** FUNCTION ***/
-static tflite::MicroInterpreter* CreateStaticInterpreter(void)
-{
+static tflite::MicroInterpreter* CreateStaticInterpreter(void) {
     constexpr int32_t kTensorArenaSize = 80 * 1024;
     static uint8_t tensor_arena[kTensorArenaSize];
     const tflite::Model* model = tflite::GetModel(g_model);
@@ -86,20 +88,60 @@ static tflite::MicroInterpreter* CreateStaticInterpreter(void)
     return interpreter;
 }
 
+
+void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_score_list, int32_t zero_point, float scale) {
+    /* Create majority vote to remove noise from the result (use int8 to avoid unnecessary dequantization (calculation)) */
+    //MajorityVote<float> majority_vote;
+    static MajorityVote<int32_t> majority_vote;
+
+    oled.FillRect(0, 0, 0, Oled::kWidth, Oled::kHeight);
+    float score_talking = (current_score_list[kCategoryIndexOfTalking] - zero_point) * scale;
+    char buff[Oled::kWidth / Oled::kFontWidth - 1];
+    oled.SetCharPos(1, 1);
+    snprintf(buff, sizeof(buff), "Talking Level:%5.1f%%\n", score_talking * 100);
+    oled.PrintText(buff);
+    oled.SetCharPos(2, 3);
+    oled.PrintText("|");
+    oled.SetCharPos(2 + 8, 3);
+    oled.PrintText(":");
+    oled.SetCharPos(2 + 1, 3);
+    for (int32_t i = 0; i < static_cast<int32_t>(score_talking * 10); i++) {
+        oled.PrintText(">");
+    }
+    oled.SetCharPos(2 + 10, 3);
+    oled.PrintText("|");
+
+    /* Use low-pass filtered result to judge if talking or not */
+    int32_t first_index;
+    int32_t score;
+    majority_vote.vote(current_score_list, first_index, score);
+    if (first_index == kCategoryIndexOfTalking) {
+        float score_dequantized = (score - zero_point) * scale;
+        if (score_dequantized >= kScoreThreshold && score_talking >= kScoreThreshold) {
+            oled.SetCharPos(2, 5);
+            oled.PrintText("++++++++++++++++++++++");
+            oled.SetCharPos(2, 6);
+            oled.PrintText("++ Talking Detected ++");
+            oled.SetCharPos(2, 7);
+            oled.PrintText("++++++++++++++++++++++");
+        }
+    }
+}
+
 int main(void) {
 #ifndef BUILD_ON_PC
     stdio_init_all();
     sleep_ms(1000);		// wait until UART connected
 #endif
 
-    PRINT("Hello, world!\n");
+    PRINT("Talking Detector\n");
 
     /* Create Display */
     Oled oled;
     oled.Initialize();
     oled.FillRect(0, 0, 0, Oled::kWidth, Oled::kHeight);
-    oled.SetCharPos(8, 4);
-    oled.PrintText("Hello!!");
+    oled.SetCharPos(4, 4);
+    oled.PrintText("Talking Detector");
 
     /* Create feature provider */
     static int8_t feature_buffer[kFeatureElementCount];
@@ -110,7 +152,7 @@ int main(void) {
 
 #if 0
     /* for recording */
-    /* memo. increase (kBufferSize = 400). Call Stop() when overflow */
+    /* memo. increase (kBufferSize = 200). Call Stop() when overflow */
     while(audio_provider.GetLatestAudioTimestamp() < 0);
     int32_t current_time = audio_provider.GetLatestAudioTimestamp();
     while(1) {
@@ -136,10 +178,6 @@ int main(void) {
     TfLiteTensor* input = interpreter->input(0);
     TfLiteTensor* output = interpreter->output(0);
 
-    /* Create majority vote to remove noise from the result (use int8 to avoid unnecessary dequantization (calculation)) */
-    //MajorityVote<float> majority_vote;
-    MajorityVote<int32_t> majority_vote;
-
     while (1) {
         /* Generate feature */
         audio_provider.DebugWriteData(500);
@@ -158,8 +196,6 @@ int main(void) {
 
         /* Copy the generated feature data to input tensor buffer*/
         for (int32_t i = 0; i < kFeatureElementCount; i++) {
-            //input->data.int8[i] = g_yes_micro_f2e59fea_nohash_1_data[i];
-            //input->data.int8[i] = g_no_micro_f9643d42_nohash_4_data[i];
             input->data.int8[i] = feature_buffer[i];
         }
 
@@ -173,38 +209,12 @@ int main(void) {
         /* Show result */
         int8_t* y_quantized = output->data.int8;
         std::array<int32_t, kCategoryCount> current_score_list;
-        int32_t detected_index = -1;
         for (int32_t i = 0; i < kCategoryCount; i++) {
             current_score_list[i] = y_quantized[i];
             float y = (y_quantized[i] - output->params.zero_point) * output->params.scale;
-            oled.SetCharPos(1, i + 1);
-            char buff[Oled::kWidth / Oled::kFontWidth - 1];
-            snprintf(buff, sizeof(buff), "%s: %.03f\n", kCategoryLabels[i], y);
-            oled.PrintText(buff);
-            if (y > 0.8) {
-                PRINT("%s", buff);
-                detected_index = i;
-            }
+            PRINT("%s: %.03f\n", kCategoryLabels[i], y);
         }
-        oled.SetCharPos(5, 6);
-        if (detected_index == 0) {
-            oled.PrintText(">>> TALKING <<<");
-        } else {
-            oled.PrintText("               ");
-        }
-
-        /* From some experiments, slices_to_drop is 3 ~ 5. It means that the interval is 60 ~ 100 msec */
-        /* So, using average for some results may cause wrong result */
-        // int32_t first_index;
-        // int32_t score;
-        // majority_vote.vote(current_score_list, first_index, score);
-        // float score_dequantized = (score - output->params.zero_point) * output->params.scale;
-        // if (score_dequantized > 0.5 && (first_index == 2 || first_index == 3)) {
-        //     PRINT("%s: %f\n", kCategoryLabels[first_index], score_dequantized);
-        // } else {
-        //     PRINT("%s: %f\n", "unknown", 1 - score_dequantized);
-        // }
-        // PRINT("--------\n");
+        DisplayResultOled(oled, current_score_list, output->params.zero_point, output->params.scale);
     }
 
     return 0;
