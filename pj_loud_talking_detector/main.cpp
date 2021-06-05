@@ -100,15 +100,15 @@ void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_s
     oled.SetCharPos(1, 1);
     snprintf(buff, sizeof(buff), "Talking Level:%5.1f%%\n", score_talking * 100);
     oled.PrintText(buff);
-    oled.SetCharPos(2, 3);
+    oled.SetCharPos(2 + 0 * 2, 3);
     oled.PrintText("|");
-    oled.SetCharPos(2 + 8, 3);
+    oled.SetCharPos(2 + 8 * 2, 3);
     oled.PrintText(":");
     oled.SetCharPos(2 + 1, 3);
-    for (int32_t i = 0; i < static_cast<int32_t>(score_talking * 10); i++) {
+    for (int32_t i = 0; i < static_cast<int32_t>(score_talking * 10 * 2 + 0.05); i++) {
         oled.PrintText(">");
     }
-    oled.SetCharPos(2 + 10, 3);
+    oled.SetCharPos(2 + 10 * 2, 3);
     oled.PrintText("|");
 
     /* Use low-pass filtered result to judge if talking or not */
