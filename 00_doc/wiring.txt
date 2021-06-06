@@ -13,4 +13,7 @@ pico                Microphone (PDM SPM0405HD4H)
 31 (GP26)           DAT
 32 (GP27)           CLK
 
-
+pico                Battery
+---------------------------------------
+38 (GND)            GND
+39 (VSYS)           +3.3V
