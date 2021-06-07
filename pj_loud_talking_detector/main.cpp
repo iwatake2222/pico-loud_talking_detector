@@ -64,6 +64,7 @@ static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 static tflite::MicroInterpreter* CreateStaticInterpreter(void) {
     constexpr int32_t kTensorArenaSize = 80 * 1024;
     static uint8_t tensor_arena[kTensorArenaSize];
+    const unsigned char *g_model = (kClipDuration == 10) ? g_model_10sec : g_model_5sec;
     const tflite::Model* model = tflite::GetModel(g_model);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         PRINT_E("Model provided is schema version %d not equal to supported version %d.", model->version(), TFLITE_SCHEMA_VERSION);
