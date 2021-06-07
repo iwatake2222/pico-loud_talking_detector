@@ -19,7 +19,7 @@ limitations under the License.
 #include <cstdint>
 
 void AmplitudeAnalyzer_Reset(void);
-float AmplitudeAnalyzer_GetDecibel(void);
+float AmplitudeAnalyzer_Get(void);
 void AmplitudeAnalyzer_Add(int16_t value[], int32_t num);
 
 #endif

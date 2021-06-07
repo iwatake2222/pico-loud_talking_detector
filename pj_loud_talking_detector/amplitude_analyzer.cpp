@@ -19,37 +19,42 @@ limitations under the License.
 #include <cmath>
 #include <algorithm>
 
-static uint32_t AmplitudeAnalyzer_max_amplitude = 0;
+/* store amplitude valeu to calculate average */
+static uint32_t AmplitudeAnalyzer_acc_num = 0;
+static uint32_t AmplitudeAnalyzer_acc_value = 0;
 static bool AmplitudeAnalyzer_reset = true;
 
 void AmplitudeAnalyzer_Reset(void) {
     AmplitudeAnalyzer_reset = true;
 }
 
-float AmplitudeAnalyzer_GetDecibel(void) {
-    if (AmplitudeAnalyzer_max_amplitude == 0) return -100.0f;
-    float value = 20 * log10f(AmplitudeAnalyzer_max_amplitude / 32768.f);
-    if (value <= -50) value = -50.f;
-    if (value > 0) value = 0.f;
-    return value;
+float AmplitudeAnalyzer_Get(void) {
+    if (AmplitudeAnalyzer_acc_num == 0) {
+        return 0;
+    }
+    return AmplitudeAnalyzer_acc_value / (AmplitudeAnalyzer_acc_num * 65536.f);
 }
 
 void AmplitudeAnalyzer_Add(int16_t value[], int32_t num) {
     if (num == 0) return;
     if (AmplitudeAnalyzer_reset) {
         AmplitudeAnalyzer_reset = false;
-        AmplitudeAnalyzer_max_amplitude = 0;
+        AmplitudeAnalyzer_acc_num = 0;
+        AmplitudeAnalyzer_acc_value = 0;
     }
 
-    uint32_t amplitude_acc = 0;
+    int16_t amplitude_max = 0;
+    int16_t amplitude_min = 0;
     for (int i = 0; i < num; i++) {
-        uint32_t value_abs = std::abs(value[i]);
-        amplitude_acc += value_abs;
+        if (value[i] > amplitude_max) {
+            amplitude_max = value[i];
+        }
+        if (value[i] < amplitude_min) {
+            amplitude_min = value[i];
+        }
     }
-    amplitude_acc /= num;
-    if (amplitude_acc > AmplitudeAnalyzer_max_amplitude) {
-        AmplitudeAnalyzer_max_amplitude = amplitude_acc;
-    }
-
+    int32_t amplitude = static_cast<int32_t>(amplitude_max) - amplitude_min;
+    AmplitudeAnalyzer_acc_num++;
+    AmplitudeAnalyzer_acc_value += amplitude;
 }
 
