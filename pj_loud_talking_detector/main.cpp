@@ -41,7 +41,7 @@ limitations under the License.
 #include "audio_provider.h"
 #include "majority_vote.h"
 #include "oled.h"
-#include "analyze_amplitude.h"
+#include "amplitude_analyzer.h"
 
 /*** MACRO ***/
 #define TAG "main"
@@ -50,7 +50,8 @@ limitations under the License.
 
 static constexpr float kScoreThreshold = 0.8;
 static constexpr float kScoreAvgThreshold = 0.6;
-static constexpr float kAmplitudeThreshold = -18;    //[db]
+static constexpr float kDecibelMax = 50;    // -50 [db]
+static constexpr float kDecibelThreshold = -25;    // [db]
 static constexpr int32_t klevelBarSize = 1;
 static constexpr int32_t kCategoryIndexOfTalking = 0;
 
@@ -93,7 +94,7 @@ static tflite::MicroInterpreter* CreateStaticInterpreter(void) {
 }
 
 
-void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_score_list, int32_t zero_point, float scale, float amplitude) {
+void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_score_list, int32_t zero_point, float scale, float decibel) {
     /* Create majority vote to remove noise from the result (use int8 to avoid unnecessary dequantization (calculation)) */
     //MajorityVote<float> majority_vote;
     static MajorityVote<int32_t> majority_vote;
@@ -105,30 +106,30 @@ void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_s
     snprintf(buff, sizeof(buff), "Talking Level: %3d %%\n", static_cast<int32_t>(score_talking * 100 + 0.0));
     oled.PrintText(buff);
     oled.SetCharPos(10 + 0 * klevelBarSize, 2);
-    oled.PrintText("|");
+    oled.PrintText("[");
     oled.SetCharPos(10 + kScoreThreshold * 10 * klevelBarSize, 2);
     oled.PrintText(":");
     oled.SetCharPos(10 + 1, 2);
     for (int32_t i = 0; i < static_cast<int32_t>(score_talking * 10 * klevelBarSize + 0.05); i++) {
-        oled.PrintText(">");
+        oled.PrintText("|");
     }
     oled.SetCharPos(10 + 10 * klevelBarSize, 2);
-    oled.PrintText("|");
+    oled.PrintText("]");
 
     oled.SetCharPos(1, 3);
-    snprintf(buff, sizeof(buff), "Amplitude:    %4d dB\n", static_cast<int32_t>(amplitude + 0.0));
+    snprintf(buff, sizeof(buff), "Decibel:      %4d dB\n", static_cast<int32_t>(decibel + 0.0));
     oled.PrintText(buff);
     oled.SetCharPos(10 + 0 * klevelBarSize, 4);
-    oled.PrintText("|");
-    oled.SetCharPos(10 + (kAmplitudeThreshold + 40) / 40.f * 10 * klevelBarSize, 4);
+    oled.PrintText("[");
+    oled.SetCharPos(10 + (kDecibelThreshold + kDecibelMax) / static_cast<float>(kDecibelMax) * 10 * klevelBarSize, 4);
     oled.PrintText(":");
     oled.SetCharPos(10 + 1, 4);
-    int32_t amplitudeLevel = (amplitude + 40) / 40.f * 10 * klevelBarSize + 0.05;
-    for (int32_t i = 0; i < amplitudeLevel; i++) {
-        oled.PrintText(">");
+    int32_t decibel_level = (decibel + kDecibelMax) / static_cast<float>(kDecibelMax) * 10 * klevelBarSize + 0.05;
+    for (int32_t i = 0; i < decibel_level; i++) {
+        oled.PrintText("|");
     }
     oled.SetCharPos(10 + 10 * klevelBarSize, 4);
-    oled.PrintText("|");
+    oled.PrintText("]");
 
     /* Use low-pass filtered result to judge if talking or not */
     int32_t first_index;
@@ -136,7 +137,7 @@ void DisplayResultOled(Oled& oled, std::array<int32_t, kCategoryCount> current_s
     majority_vote.vote(current_score_list, first_index, score);
     if (first_index == kCategoryIndexOfTalking) {
         float score_avg = (score - zero_point) * scale;
-        if (score_avg >= kScoreAvgThreshold && score_talking >= kScoreThreshold && amplitude > kAmplitudeThreshold) {
+        if (score_avg >= kScoreAvgThreshold && score_talking >= kScoreThreshold && decibel >= kDecibelThreshold) {
             oled.SetCharPos(2, 5);
             oled.PrintText("++++++++++++++++++++++");
             oled.SetCharPos(2, 6);
@@ -226,12 +227,12 @@ int main(void) {
         }
 
         /* Get amplitude */
-        float amplitude = AnalyzeAmplitude_Get();
-        static constexpr float kMixRatio = 0.3f;
-        static float amplitude_filtered = -40;
-        amplitude_filtered = amplitude * kMixRatio + amplitude_filtered * (1 - kMixRatio);
-        AnalyzeAmplitude_Reset();
-        PRINT("%.1f [dB], %.1f [dB]\n", amplitude, amplitude_filtered);
+        float decibel = AmplitudeAnalyzer_GetDecibel();
+        static constexpr float kMixRatio = 0.6f;
+        static float decibel_filtered = -kDecibelMax;
+        decibel_filtered = decibel * kMixRatio + decibel_filtered * (1 - kMixRatio);
+        AmplitudeAnalyzer_Reset();
+        PRINT("%.1f [dB], %.1f [dB]\n", decibel, decibel_filtered);
 
         /* Show result */
         int8_t* y_quantized = output->data.int8;
@@ -243,7 +244,7 @@ int main(void) {
                 PRINT("%s: %.03f\n", kCategoryLabels[i], y);
             }
         }
-        DisplayResultOled(oled, current_score_list, output->params.zero_point, output->params.scale, amplitude_filtered);
+        DisplayResultOled(oled, current_score_list, output->params.zero_point, output->params.scale, decibel_filtered);
         PRINT("---\n");
     }
 

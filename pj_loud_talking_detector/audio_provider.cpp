@@ -21,7 +21,7 @@ limitations under the License.
 #include <cstring>
 
 #include "utility_macro.h"
-#include "analyze_amplitude.h"
+#include "amplitude_analyzer.h"
 
 #ifdef BUILD_ON_PC
 #include "test_buffer.h"
@@ -157,7 +157,7 @@ int32_t AudioProvider::GetAudioSamples(
     *audio_samples_size = valid_data_num_;
     *audio_samples = local_buffer_;
 
-    AnalyzeAmplitude_Add(local_buffer_, valid_data_num_);
+    AmplitudeAnalyzer_Add(local_buffer_, valid_data_num_);
 
     return kRetOk;
 }

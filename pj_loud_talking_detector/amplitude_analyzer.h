@@ -13,13 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef ANALYZE_AMPLITUDE_H_
-#define ANALYZE_AMPLITUDE_H_
+#ifndef AMPLITUDE_ANALYZER_H_
+#define AMPLITUDE_ANALYZER_H_
 
 #include <cstdint>
 
-void AnalyzeAmplitude_Reset(void);
-float AnalyzeAmplitude_Get(void);
-void AnalyzeAmplitude_Add(int16_t value[], int32_t num);
+void AmplitudeAnalyzer_Reset(void);
+float AmplitudeAnalyzer_GetDecibel(void);
+void AmplitudeAnalyzer_Add(int16_t value[], int32_t num);
 
 #endif

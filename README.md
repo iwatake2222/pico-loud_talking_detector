@@ -47,7 +47,7 @@
 ### How to build
 ```sh
 git clone https://github.com/iwatake2222/pico-loud_talking_detector.git
-cd pico-mnist
+cd pico-loud_talking_detector
 git submodule update --init
 cd pico-sdk && git submodule update --init && cd ..
 mkdir build && cd build
@@ -78,15 +78,16 @@ make
         - Noise:
             - White noise, pink noise
     - Mix noise manually:
-        - 1. Original data: [Talking]
-        - 2. Mix background: [Talking, Talking + Background]
-        - 3. Mix noise: [Talking, Talking + Background, Talking + Noise, Talking + Background + Noise]
+        1. Original data: [Talking]
+        2. Mix background: [Talking, Talking + Background]
+        3. Mix noise: [Talking, Talking + Background, Talking + Noise, Talking + Background + Noise]
+    - Separate test data from training data completely
+        - Some clips are divided from the same video, so data leakage may happen if I ramdomly separate data following the original script
     - Change wanted word list from [yes, no] to [talking, not_talking]
     - Remove "SILENCE" and "UNKNOWN" category
         - Because "SILENCE" and "UNKNOWN" are parts of "Not Talking"
     - Change clip duration from 1 sec to 10 sec
-    - Separate test data from training data completely
-        - Some clips are divided from the same video, so data leakage may happen if I ramdomly separate data following the original script
+    - Increase training steps
 
 ## Design
 ### Dataflow
@@ -113,15 +114,23 @@ make
         - amplitude >= -18 \[dB\]
 
 ## Performance
-- Accuracy: 
-- Processing time:
-    - Preprocess (retrieving audio data and creating feature data): 8 msec
-    - Inference: 61 msec
+|                   | 10 sec model | 5 sec model |
+| :---------------- | -----------: | ----------: |
+| Accuracy          |    xx [%]    |    xx [%]   |
+| Processing time   |    ---       |    ---      |
+| __Total           |   xxx [msec] |  xxx [msec] |
+| __Preprocess      |   xxx [msec] |  xxx [msec] |
+| __Inference       |   xxx [msec] |  xxx [msec] |
+| __Other           |   xxx [msec] |  xxx [msec] |
+| Power consumption |    ---       |    ---      |
+| __5 [V]           |   xxx [mA]   |  xxx [mA]   |
+| __3.3 [V]         |   xxx [mA]   |  xxx [mA]   |
+
 
 ## Future works
 - This system can be implemented in an order call system in a restaurant to encourage customers to eat silently
 - Need to decrease power consumption
-    - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be once every few seconds or even a minute
+    - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be reduced, probably once every several seconds or once a minute
     - Or using an analog circuilt to check voice level and kick pico may be a good idea
 - Need to improve accuracy
     - So far, the training data is very limited (Japanese only)
