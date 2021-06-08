@@ -1,17 +1,18 @@
 # Loud Talking Detector
-- This system detects loud talking in an eating spot to help in the fight against COVID ( Corona Virus )
-- It detects "talking" when people talk loud ( Left )
-- It doesn't detect "talking" when people talks in a low voice or the sound is not talking ( e.g. noise, music, etc. ) ( Right )
+- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking in an eating spot to help in the fight against COVID ( Corona Virus )
+- It detects "talking" when people talk loudly ( Left )
+- It doesn't detect "talking" when people talk quietly or the sound is not talking ( e.g. noise, music, etc. ) ( Right )
 
 |![00_doc/pic00.jpg](00_doc/pic00.jpg)|![00_doc/pic01.jpg](00_doc/pic01.jpg)|
 |---|---|
 
 ## System overview
-- Training
-    - A deep learning model is created to classify two types of sound ("Talking", "Not Talking")
+- Deep Learning Model
+    - A deep learning model is created to classify 10 or 5 seconds of audio to two types of sound ("Talking", "Not Talking")
+        - Change the value of `CLIP_DURATION ` and `kClipDuration` to switch clip duration
     - The model is converted to TensorFlow Lite for Microcontrollers format
     - The training runs on Google Colaboratory
-- Production environment
+- Device
     - The model is deployed to a Raspberry Pi Pico
     - A microphone and a display are connected to the Raspberry Pi Pico
     - The Raspberry Pi Pico captures sound from the microphone, judges whether it's loud talking and outputs a result to the display
@@ -41,8 +42,8 @@
 - OLED (SSD1306, I2C, 128x64)
     - https://akizukidenshi.com/catalog/g/gP-15870/
 
-### Wiring
-[00_doc/wiring.txt](00_doc/wiring.txt)
+### Connections
+[00_doc/connections.txt](00_doc/connections.txt)
 
 ### How to build
 ```sh
@@ -63,37 +64,48 @@ cmake .. -G "MSYS Makefiles"
 make
 ```
 
-## How to Create a Deep Learning Model
+### How to Create a Deep Learning Model
 - Run the training script [01_script/training/train_micro_speech_model_talking.ipynb](01_script/training/train_micro_speech_model_talking.ipynb) on Google Colaboratory. It takes around 10 hours to train the model using GPU instance
 - The original script is https://colab.research.google.com/github/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/examples/micro_speech/train/train_micro_speech_model.ipynb . I made some modifications:
     - Use my dataset
-        - Talking:
-            - Talk show from youtube
-            - TV show
-        - Not Talking:
-            - https://research.google.com/audioset/dataset/index.html
-            - Music
-        - Background
-            - Restaurant / Coffee shop ambience
-        - Noise:
-            - White noise, pink noise
     - Mix noise manually:
         1. Original data: [Talking]
         2. Mix background: [Talking, Talking + Background]
         3. Mix noise: [Talking, Talking + Background, Talking + Noise, Talking + Background + Noise]
     - Separate test data from training data completely
-        - Some clips are divided from the same video, so data leakage may happen if I ramdomly separate data following the original script
-    - Change wanted word list from [yes, no] to [talking, not_talking]
+        - Some clips are divided from the same video, so data leakage may happen if I randomly separate data following the original script
+    - Change the wanted word list from [yes, no] to [talking, not_talking]
     - Remove "SILENCE" and "UNKNOWN" category
         - Because "SILENCE" and "UNKNOWN" are parts of "Not Talking"
     - Change clip duration from 1 sec to 10 sec
     - Increase training steps
+- Note: you cannot run the script because data download will fail. I can't share dataset due to copyright.
 
-## Design
+### Dataset
+- Details
+    - Talking:
+        - Talk show from YouTube
+        - TV show
+    - Not Talking:
+        - https://research.google.com/audioset/dataset/index.html
+        - Music from YouTube
+    - Background (for augmentation and "Not Talking")
+        - Restaurant / Coffee shop ambience
+    - Noise (for augmentation and "Not Talking")
+        - White noise, pink noise
+- The number of data
+    - 10-second-model
+        - Talking: 22,144
+        - Not Talking: 20,364
+    - 5-second-model
+        - Talking: 38,854
+        - Not Talking: 36,557
+
+## Software Design
 ### Dataflow
 ![dataflow.png](00_doc/dataflow.png)
 
-### Software Design
+### Modules
 ![design.png](00_doc/design.png)
 - AudioBuffer:
     - provides an interface to access storead audio data in ring block buffer
@@ -106,32 +118,31 @@ make
     - converts data from uint8_t to int16_t if needed
     - allocates the data on sequential memory address
 - FeatureProvider:
-    - almost the same as the original code
+    - almost the same as the original code. https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/micro_speech
 - Judgement:
-    - judges whether the sound is "talking" using the following conditions:
-        - current score of "talking" > 0.8
-        - average score of "talking" for few seconds > 0.6
-        - amplitude >= -18 \[dB\]
+    - judges whether the captured sound is "talking" using the following conditions:
+        - current score of "talking" >= 0.8
+        - average score of "talking" >= 0.6
+        - amplitude >= -20 [dB]
 
 ## Performance
 |                   | 10 sec model | 5 sec model |
 | :---------------- | -----------: | ----------: |
-| Accuracy          |    xx [%]    |    xx [%]   |
+| Accuracy          |   96.1 [%]   |  94.8 [%]   |
 | Processing time   |    ---       |    ---      |
-| __Total           |   xxx [msec] |  xxx [msec] |
-| __Preprocess      |   xxx [msec] |  xxx [msec] |
-| __Inference       |   xxx [msec] |  xxx [msec] |
-| __Other           |   xxx [msec] |  xxx [msec] |
-| Power consumption |    ---       |    ---      |
-| __5 [V]           |   xxx [mA]   |  xxx [mA]   |
-| __3.3 [V]         |   xxx [mA]   |  xxx [mA]   |
+| __Total           |  743 [msec]  |  379 [msec] |
+| __Preprocess      |   89 [msec]  |   44 [msec] |
+| __Inference       |  625 [msec]  |  308 [msec] |
+| __Other           |   29 [msec]  |   27 [msec] |
+| Power consumption | 3.3 [V] x 21 [mA] | 3.3 [V] x 22 [mA] |
 
+Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]). Idle (not in sleep mode) current is around 18 [mA] 
 
 ## Future works
-- This system can be implemented in an order call system in a restaurant to encourage customers to eat silently
+- This system can be implemented in an order call system in a restaurant to encourage customers to eat silently to prevent the spread of the coronavirus
 - Need to decrease power consumption
     - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be reduced, probably once every several seconds or once a minute
-    - Or using an analog circuilt to check voice level and kick pico may be a good idea
+    - Or using an analog circuilt to check voice level and kick pico in sleep mode may be a good idea
 - Need to improve accuracy
     - So far, the training data is very limited (Japanese only)
 
