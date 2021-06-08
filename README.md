@@ -130,10 +130,10 @@ make
 | :---------------- | -----------: | ----------: |
 | Accuracy          |   96.1 [%]   |  94.8 [%]   |
 | Processing time   |    ---       |    ---      |
-| __Total           |  743 [msec]  |  379 [msec] |
-| __Preprocess      |   89 [msec]  |   44 [msec] |
-| __Inference       |  625 [msec]  |  308 [msec] |
-| __Other           |   29 [msec]  |   27 [msec] |
+| __Total           |  554 [msec]  |  298 [msec] |
+| __Preprocess      |   61 [msec]  |   31 [msec] |
+| __Inference       |  455 [msec]  |  226 [msec] |
+| __Other           |   38 [msec]  |   41 [msec] |
 | Power consumption | 3.3 [V] x 21 [mA] | 3.3 [V] x 22 [mA] |
 
 Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]). Idle (not in sleep mode) current is around 18 [mA] 
