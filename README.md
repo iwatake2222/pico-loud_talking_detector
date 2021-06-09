@@ -1,15 +1,14 @@
-# Loud Talking Detector
-- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking in an eating spot to help in the fight against COVID ( Corona Virus )
-- It detects "talking" when people talk loudly ( Left )
-- It doesn't detect "talking" when people talk quietly or the sound is not talking ( e.g. noise, music, etc. ) ( Right )
+# Loud Talking Detector in FRISK
+- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking, and encourages people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus ( COVID )
+    - It detects "talking" when people talk loudly
+    - It doesn't detect "talking" when people talk quietly or the sound is not talking ( e.g. noise, music, etc. )
 
-|![00_doc/pic00.jpg](00_doc/pic00.jpg)|![00_doc/pic01.jpg](00_doc/pic01.jpg)|
-|---|---|
+![00_doc/pic.jpg](00_doc/pic.jpg)
 
 ## System overview
 - Deep Learning Model
     - A deep learning model is created to classify 10 or 5 seconds of audio to two types of sound ("Talking", "Not Talking")
-        - Change the value of `CLIP_DURATION ` and `kClipDuration` to switch clip duration
+        - Change the value of `CLIP_DURATION ` and `kClipDuration` to switch clip duration (10sec/5sec)
     - The model is converted to TensorFlow Lite for Microcontrollers format
     - The training runs on Google Colaboratory
 - Device
@@ -65,11 +64,11 @@ make
 ```
 
 ### How to Create a Deep Learning Model
-- Run the training script [01_script/training/train_micro_speech_model_talking.ipynb](01_script/training/train_micro_speech_model_talking.ipynb) on Google Colaboratory. It takes around 10 hours to train the model using GPU instance
+- Run the training script [01_script/training/train_micro_speech_model_talking_10sec.ipynb](01_script/training/train_micro_speech_model_talking_10sec.ipynb) on Google Colaboratory. It takes around 10 hours to train the model using GPU instance
 - The original script is https://colab.research.google.com/github/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/examples/micro_speech/train/train_micro_speech_model.ipynb . I made some modifications:
     - Use my dataset
     - Mix noise manually:
-        1. Original data: [Talking]
+        1. Prepare original data: [Talking]
         2. Mix background: [Talking, Talking + Background]
         3. Mix noise: [Talking, Talking + Background, Talking + Noise, Talking + Background + Noise]
     - Separate test data from training data completely
@@ -79,7 +78,7 @@ make
         - Because "SILENCE" and "UNKNOWN" are parts of "Not Talking"
     - Change clip duration from 1 sec to 10 sec
     - Increase training steps
-- Note: you cannot run the script because data download will fail. I can't share dataset due to copyright.
+- Note: you cannot run the script because data download will fail. I don't share dataset due to copyright.
 
 ### Dataset
 - Details
@@ -102,11 +101,13 @@ make
         - Not Talking: 36,557
 
 ## Software Design
+Ths original project is from https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/micro_speech .
+
 ### Dataflow
 ![dataflow.png](00_doc/dataflow.png)
 
 ### Modules
-![design.png](00_doc/design.png)
+![modules.png](00_doc/modules.png)
 - AudioBuffer:
     - provides an interface to access storead audio data in ring block buffer
     - has three implementations, ADC (for analog mic connected to ADC), PDM (for PDM mic), TestBuffer (prepared data array). I use PDM in this project
@@ -118,7 +119,7 @@ make
     - converts data from uint8_t to int16_t if needed
     - allocates the data on sequential memory address
 - FeatureProvider:
-    - almost the same as the original code. https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/micro_speech
+    - almost the same as the original code.
 - Judgement:
     - judges whether the captured sound is "talking" using the following conditions:
         - current score of "talking" >= 0.8
@@ -136,15 +137,17 @@ make
 | __Other           |   38 [msec]  |   41 [msec] |
 | Power consumption | 3.3 [V] x 21 [mA] | 3.3 [V] x 22 [mA] |
 
-Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]). Idle (not in sleep mode) current is around 18 [mA] 
+Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]).
 
 ## Future works
-- This system can be implemented in an order call system in a restaurant to encourage customers to eat silently to prevent the spread of the coronavirus
-- Need to decrease power consumption
-    - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be reduced, probably once every several seconds or once a minute
+![order_call.png](00_doc/order_call.png)
+
+- This is a very tiny system (fittiing in FRISK !) , so that it can be implemented in an order call system in a restaurant to encourage customers to eat quietly to prevent the spread of the coronavirus
+- Need to reduce power consumption
+    - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be decreased, probably once every several seconds or once a minute is enouhgh
     - Or using an analog circuilt to check voice level and kick pico in sleep mode may be a good idea
 - Need to improve accuracy
-    - So far, the training data is very limited (Japanese only)
+    - So far, the training data is very limited and Japanese only
 
 ## Acknowledgements
 - pico-sdk
@@ -156,4 +159,5 @@ Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]
 - pico-microphone
     - https://github.com/sandeepmistry/pico-microphone
     - Copyright (c) 2021 Arm Limited and Contributors. All rights reserved.
-
+- Illustrations
+    - https://www.irasutoya.com/
