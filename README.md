@@ -1,7 +1,7 @@
 # Loud Talking Detector in FRISK
-- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking, and encourages people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus ( COVID )
+- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking. It can be utilized to encourage people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus
     - It detects "talking" when people talk loudly
-    - It doesn't detect "talking" when people talk quietly or the sound is not talking ( e.g. noise, music, etc. )
+    - It doesn't detect "talking" when people talk quietly or the sound is not talking (e.g. noise, music, etc.)
 
 ![00_doc/pic.jpg](00_doc/pic.jpg)
 
@@ -44,7 +44,7 @@
 ### Connections
 [00_doc/connections.txt](00_doc/connections.txt)
 
-### How to build
+### How to Build
 ```sh
 git clone https://github.com/iwatake2222/pico-loud_talking_detector.git
 cd pico-loud_talking_detector
@@ -63,22 +63,30 @@ cmake .. -G "MSYS Makefiles"
 make
 ```
 
+### How to Debug on PC
+- If you want to debug this project on PC, please run cmake in `pj_loud_talking_detector/pj_loud_talking_detector` directory
+- The created project uses TestBuffer instead of microphone. You can change audio data by modifying C array in `test_audio_data.h`
+- `wave2array.py` is useful to convert wave file to C array.
+- I tested on Visual Studio 2019 and I'm not sure it works on other environments
+
+## About Deep Learning Model
 ### How to Create a Deep Learning Model
 - Run the training script [01_script/training/train_micro_speech_model_talking_10sec.ipynb](01_script/training/train_micro_speech_model_talking_10sec.ipynb) on Google Colaboratory. It takes around 10 hours to train the model using GPU instance
-- The original script is https://colab.research.google.com/github/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/examples/micro_speech/train/train_micro_speech_model.ipynb . I made some modifications:
+- The original script is https://colab.research.google.com/github/tensorflow/tensorflow/blob/master/tensorflow/lite/micro/examples/micro_speech/train/train_micro_speech_model.ipynb
+- I made some modifications:
     - Use my dataset
     - Mix noise manually:
         1. Prepare original data: [Talking]
         2. Mix background: [Talking, Talking + Background]
         3. Mix noise: [Talking, Talking + Background, Talking + Noise, Talking + Background + Noise]
     - Separate test data from training data completely
-        - Some clips are divided from the same video, so data leakage may happen if I randomly separate data following the original script
+        - Some clips are generated from the same video, so data leakage may happen if I randomly separate data following the original script
     - Change the wanted word list from [yes, no] to [talking, not_talking]
     - Remove "SILENCE" and "UNKNOWN" category
         - Because "SILENCE" and "UNKNOWN" are parts of "Not Talking"
     - Change clip duration from 1 sec to 10 sec
     - Increase training steps
-- Note: you cannot run the script because data download will fail. I don't share dataset due to copyright.
+- **Note: You cannot run the script because data download will fail. I don't share dataset due to copyright.**
 
 ### Dataset
 - Details
@@ -93,10 +101,10 @@ make
     - Noise (for augmentation and "Not Talking")
         - White noise, pink noise
 - The number of data
-    - 10-second-model
+    - 10 sec model
         - Talking: 22,144
         - Not Talking: 20,364
-    - 5-second-model
+    - 5 sec model
         - Talking: 38,854
         - Not Talking: 36,557
 
@@ -109,13 +117,13 @@ Ths original project is from https://github.com/tensorflow/tensorflow/tree/maste
 ### Modules
 ![modules.png](00_doc/modules.png)
 - AudioBuffer:
-    - provides an interface to access storead audio data in ring block buffer
-    - has three implementations, ADC (for analog mic connected to ADC), PDM (for PDM mic), TestBuffer (prepared data array). I use PDM in this project
+    - provides an interface to access storead audio data in a ring block buffer
+    - has three implementations: ADC (for analog mic connected to ADC), PDM (for PDM mic), TestBuffer (prepared data array). I use PDM in this project
 - RingBlockBuffer:
-    - consists of some blocks. The block size is 512 Byte ~~and the size is equal to DMA's transfer size~~
+    - consists of some blocks. The block size is 512 Byte ~~and the size is equal to DMA's transfer size~~ and the size is equal to the buffer size for PDM mic module
     - 512 Byte ( 32 msec @16kHz ) is also convenient to work with FeatureProvider which generates feature data using 30 msec of audio data at 20 msec intervals
 - AudioProvider:
-    - extracts data from the ring block buffer to the local buffer for the requested time
+    - copies data from the ring block buffer to the local buffer for the requested time
     - converts data from uint8_t to int16_t if needed
     - allocates the data on sequential memory address
 - FeatureProvider:
@@ -124,7 +132,7 @@ Ths original project is from https://github.com/tensorflow/tensorflow/tree/maste
     - judges whether the captured sound is "talking" using the following conditions:
         - current score of "talking" >= 0.8
         - average score of "talking" >= 0.6
-        - amplitude >= -20 [dB]
+        - decibel >= -20 [dB]   (0 [dB] is the max value of input (65536))
 
 ## Performance
 |                   | 10 sec model | 5 sec model |
@@ -142,10 +150,10 @@ Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]
 ## Future works
 ![order_call.png](00_doc/order_call.png)
 
-- This is a very tiny system (fittiing in FRISK !) , so that it can be implemented in an order call system in a restaurant to encourage customers to eat quietly to prevent the spread of the coronavirus
+- This is a very tiny system ( fittiing in FRISK ! ) , so that it can be implemented in an order call system in a restaurant to encourage customers to eat quietly to prevent the spread of the coronavirus
 - Need to reduce power consumption
-    - Current system continuously captures audio and runs inference. However, fast response is not so important for many cases. The frequency of inference can be decreased, probably once every several seconds or once a minute is enouhgh
-    - Or using an analog circuilt to check voice level and kick pico in sleep mode may be a good idea
+    - Current system continuously captures audio and runs inference. However, a quick response is not so important for many cases. The frequency of inference can be decreased, probably once every several seconds or once a minute is enouhgh
+    - Or using an analog circuit to check voice level and kick pico in sleep mode may be a good idea
 - Need to improve accuracy
     - So far, the training data is very limited and Japanese only
 
