@@ -1,9 +1,12 @@
 # Loud Talking Detector in FRISK
-- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking. It can be utilized to encourage people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus
+- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking. It can be utilized to encourage people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus and help in the fight against COVID
     - It detects "talking" when people talk loudly
     - It doesn't detect "talking" when people talk quietly or the sound is not talking (e.g. noise, music, etc.)
 
 ![00_doc/pic.jpg](00_doc/pic.jpg)
+
+## YouTube
+[![00_doc/youtube.jpg](00_doc/youtube.jpg)](https://www.youtube.com/watch?v=ZRhm6DueARo)
 
 ## System overview
 - Deep Learning Model
