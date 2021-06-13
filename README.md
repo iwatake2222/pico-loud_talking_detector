@@ -1,5 +1,5 @@
 # Loud Talking Detector in FRISK
-- This tinyML system uses Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking. It can be utilized to encourage people in a restaurant/cafe to eat quietly to prevent the spread of the coronavirus and help in the fight against COVID
+- This tinyML system uses a Raspberry Pi Pico and TensorFlow Lite for Microcontrollers to detect loud talking. It can be utilized to encourage people in restaurants/cafes to eat quietly to prevent the spread of the coronavirus and help in the fight against COVID
     - It detects "talking" when people talk loudly
     - It doesn't detect "talking" when people talk quietly or the sound is not talking (e.g. noise, music, etc.)
 
@@ -89,7 +89,7 @@ make
         - Because "SILENCE" and "UNKNOWN" are parts of "Not Talking"
     - Change clip duration from 1 sec to 10 sec
     - Increase training steps
-- **Note: You cannot run the script because data download will fail. I don't share dataset due to copyright.**
+- **Note: You cannot run the script because data download will fail. I don't share dataset due to copyright restrictions**
 
 ### Dataset
 - Details
@@ -153,7 +153,7 @@ Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]
 ## Future works
 ![order_call.png](00_doc/order_call.png)
 
-- This is a very tiny system ( fittiing in FRISK ! ) , so that it can be implemented in an order call system in a restaurant to encourage customers to eat quietly to prevent the spread of the coronavirus
+- This is a very tiny system ( fittiing in FRISK ! ) , so that it can be implemented in an order call system in restaurants to encourage customers to eat quietly to prevent the spread of the coronavirus
 - Need to reduce power consumption
     - Current system continuously captures audio and runs inference. However, a quick response is not so important for many cases. The frequency of inference can be decreased, probably once every several seconds or once a minute is enouhgh
     - Or using an analog circuit to check voice level and kick pico in sleep mode may be a good idea
