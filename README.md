@@ -158,7 +158,7 @@ Note: Power consumption is measured without OLED (with OLED, it's around 26 [mA]
     - Current system continuously captures audio and runs inference. However, a quick response is not so important for many cases. The frequency of inference can be decreased, probably once every several seconds or once a minute is enouhgh
     - Or using an analog circuit to check voice level and kick pico in sleep mode may be a good idea
 - Need to improve accuracy
-    - So far, the training data is very limited and Japanese only
+    - So far, the training data is very limited (most of them are Japanese)
 
 ## Acknowledgements
 - pico-sdk
